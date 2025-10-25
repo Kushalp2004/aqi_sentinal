@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+
+# Data
+data/raw/*.csv
+data/processed/*.csv
+
+# Models
+models/*.joblib
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Env
+.env
