@@ -13,7 +13,7 @@ warnings.filterwarnings('ignore')
 # --- Model & File Names ---
 MODEL_HOURLY_FILE = 'model_hourly.pkl'
 MODEL_DAILY_FILE = 'model_daily.pkl'
-FORECAST_OUTPUT_FILE = 'forecasts.json' # Will be saved in the repo root
+FORECAST_OUTPUT_FILE = 'all_forecasts.json' # Will be saved in the repo root
 
 # --- API & Location Settings ---
 LATITUDE = 13.0270199 # Peenya
