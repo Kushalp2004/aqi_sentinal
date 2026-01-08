@@ -17,7 +17,7 @@ MODEL_HOURLY_FILE = 'model_hourly.pkl'
 MODEL_DAILY_FILE = 'model_daily.pkl'
 
 # --- UPDATED: Specific Local Path ---
-FORECAST_OUTPUT_FILE = r"C:\1VA22CI035\AQI_PROJECT\aqi-dashboard\all_forecasts.json"
+FORECAST_OUTPUT_FILE = 'all_forecasts.json'
 
 # --- Station Configuration (Bengaluru) ---
 STATIONS = {
@@ -38,7 +38,7 @@ WEATHER_API_URL = "https://api.open-meteo.com/v1/forecast"
 OPENWEATHER_AQI_URL = "http://api.openweathermap.org/data/2.5/air_pollution"
 
 # --- API Key ---
-OPENWEATHER_API_KEY = "efebb896d260930da5dcec0dfdd91765"
+OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 
 # --- Feature List ---
 FEATURES_LIST = [
