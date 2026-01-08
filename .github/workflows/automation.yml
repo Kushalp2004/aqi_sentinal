@@ -58,22 +58,21 @@ jobs:
            git status
            echo "------------------------------"
 
-      - name: Commit and Push Forecast Data
+      - name: Commit and Push to Data Branch
         run: |
           echo "Configuring Git..."
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-          echo "Checking for changes in forecast file..."
-          git_status=$(git status --porcelain forecasts.json)
-
-          if [ -z "$git_status" ]; then
-            echo "No changes detected in forecasts.json."
-          else
-            echo "Changes detected ($git_status). Committing forecasts.json..."
-            git add forecasts.json
-            git commit -m "Update AQI forecast data"
-            echo "Pushing changes..."
-            git push
-            echo "Changes pushed."
-          fi
+          # Switch to or create a dedicated branch for data ONLY
+          git checkout -B data
+          
+          # Add the specific forecast file
+          # (Ensure your Python script is updated to output 'all_forecasts.json')
+          git add all_forecasts.json
+          
+          echo "Committing data changes..."
+          git commit -m "Automated Data Update: $(date)" || echo "No changes detected"
+          
+          echo "Force-pushing to the data branch..."
+          git push origin data --force
