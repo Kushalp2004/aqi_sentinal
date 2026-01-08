@@ -10,24 +10,53 @@ import WeeklyForecast from './WeeklyForecast';
 import StationSelector, { STATIONS } from './StationSelector';
 import LocationChangeNotification from './LocationChangeNotification';
 import StationsMap from './StationsMap';
-// Import the local forecast data directly
-import allForecastsData from '../../all_forecasts.json';
+import LoadingScreen from './LoadingScreen';
 
 const Dashboard = () => {
     const [selectedStation, setSelectedStation] = useState('peenya');
-    const [data, setData] = useState(allForecastsData[selectedStation] || allForecastsData.peenya);
+    const [allData, setAllData] = useState(null); // Stores data for all stations
+    const [data, setData] = useState(null); // Stores data for the selected station
+    const [loading, setLoading] = useState(true);
     const [showNotification, setShowNotification] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [previousStation, setPreviousStation] = useState('peenya');
 
-    // Update data when selected station changes
+    // --- Monster Architecture: Live Data Fetching ---
     useEffect(() => {
-        if (selectedStation !== previousStation && allForecastsData[selectedStation]) {
+        const fetchLiveData = async () => {
+            try {
+                // Fetching from the RAW GitHub URL of your 'data' branch
+                // The ?t= timestamp prevents the browser from caching old data
+                const url = `https://raw.githubusercontent.com/Kushalp2004/aqi_sentinal/data/all_forecasts.json?t=${new Date().getTime()}`;
+                const response = await fetch(url);
+                const fetchedData = await response.json();
+                
+                setAllData(fetchedData);
+                if (fetchedData[selectedStation]) {
+                    setData(fetchedData[selectedStation]);
+                }
+            } catch (error) {
+                console.error("Critical: Failed to fetch live AQI data", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchLiveData();
+        
+        // Auto-refresh every 15 minutes to keep the dashboard "Live"
+        const interval = setInterval(fetchLiveData, 900000);
+        return () => clearInterval(interval);
+    }, [selectedStation]);
+
+    // Handle station switching animations
+    useEffect(() => {
+        if (selectedStation !== previousStation && allData && allData[selectedStation]) {
             setShowNotification(true);
             setIsTransitioning(true);
 
             setTimeout(() => {
-                setData(allForecastsData[selectedStation]);
+                setData(allData[selectedStation]);
                 setPreviousStation(selectedStation);
 
                 setTimeout(() => {
@@ -35,9 +64,10 @@ const Dashboard = () => {
                 }, 150);
             }, 400);
         }
-    }, [selectedStation, previousStation]);
+    }, [selectedStation, previousStation, allData]);
 
-    if (!data) return null;
+    // Show loading screen while the first fetch is happening
+    if (loading || !data) return <LoadingScreen />;
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-200 p-4 md:p-6 font-sans">
@@ -49,8 +79,9 @@ const Dashboard = () => {
             )}
 
             <div
-                className={`max-w-[1600px] mx-auto space-y-5 transition-opacity duration-500 ease-in-out ${isTransitioning ? 'opacity-30' : 'opacity-100'
-                    }`}
+                className={`max-w-[1600px] mx-auto space-y-5 transition-opacity duration-500 ease-in-out ${
+                    isTransitioning ? 'opacity-30' : 'opacity-100'
+                }`}
             >
                 <header className="flex justify-between items-center mb-6 flex-wrap gap-4">
                     <div>
@@ -68,10 +99,11 @@ const Dashboard = () => {
                     <div className="text-right">
                         <div className="text-xs text-slate-500 mb-1">Data Updated</div>
                         <div className="font-mono text-slate-300 text-sm">
+                            {/* Uses the actual time from your Python script's inference run */}
                             {new Date(data.current_conditions_time).toLocaleString()}
                         </div>
-                        <div className="text-xs text-green-500 mt-1 flex items-center gap-1 justify-end">
-                            <span>✓</span> Local forecast data
+                        <div className="text-xs text-blue-500 mt-1 flex items-center gap-1 justify-end">
+                            <span className="animate-pulse">●</span> Live Data Stream
                         </div>
                     </div>
                 </header>
@@ -106,6 +138,7 @@ const Dashboard = () => {
                         <StationsMap
                             selectedStation={selectedStation}
                             onStationChange={setSelectedStation}
+                            allData={allData} // Passing allData to enable live map pins
                         />
                     </div>
                 </div>
