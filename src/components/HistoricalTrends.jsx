@@ -1,27 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
-const HistoricalTrends = () => {
+const HistoricalTrends = ({ selectedStation }) => {
+    const [history, setHistory] = useState([]);
     const [range, setRange] = useState('7d');
+    const [loading, setLoading] = useState(true);
 
-    // Mock Data Generation
-    const generateData = (days) => {
-        const data = [];
-        const today = new Date();
-        for (let i = days; i >= 0; i--) {
-            const date = new Date(today);
-            date.setDate(today.getDate() - i);
-            // Random AQI between 50 and 150 for realism
-            const aqi = Math.floor(Math.random() * (150 - 50 + 1)) + 50;
-            data.push({
-                date: date.toLocaleDateString([], { month: 'short', day: 'numeric' }),
-                aqi: aqi
-            });
-        }
-        return data;
-    };
+    useEffect(() => {
+        const fetchHistory = async () => {
+            setLoading(true);
+            try {
+                // FETCH: Pulling real recorded history from your GitHub data branch
+                const url = `https://raw.githubusercontent.com/Kushalp2004/aqi_sentinal/data/history.json?t=${new Date().getTime()}`;
+                const response = await fetch(url);
+                const allHistory = await response.json();
+                
+                if (allHistory[selectedStation]) {
+                    const stationHistory = allHistory[selectedStation].map(item => ({
+                        date: new Date(item.date).toLocaleDateString([], { month: 'short', day: 'numeric' }),
+                        aqi: item.aqi
+                    }));
+                    
+                    // Slice data based on selected range (7 or 30 days)
+                    const limit = range === '7d' ? 7 : 30;
+                    setHistory(stationHistory.slice(-limit));
+                }
+            } catch (err) {
+                console.error("History fetch failed:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    const data = generateData(range === '7d' ? 7 : 30);
+        fetchHistory();
+    }, [range, selectedStation]);
 
     const getBarColor = (aqi) => {
         if (aqi <= 50) return '#22c55e';
@@ -30,6 +42,8 @@ const HistoricalTrends = () => {
         return '#ef4444';
     };
 
+    if (loading) return <div className="h-[300px] flex items-center justify-center text-slate-500 italic">Syncing historical records...</div>;
+
     return (
         <div className="bg-slate-800/30 border border-slate-700/50 rounded-2xl p-6">
             <div className="flex justify-between items-center mb-6">
@@ -37,15 +51,13 @@ const HistoricalTrends = () => {
                 <div className="flex bg-slate-700/50 rounded-lg p-1">
                     <button
                         onClick={() => setRange('7d')}
-                        className={`px-3 py-1 rounded-md text-sm font-medium transition-all ${range === '7d' ? 'bg-blue-500 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'
-                            }`}
+                        className={`px-3 py-1 rounded-md text-sm font-medium transition-all ${range === '7d' ? 'bg-blue-500 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
                     >
                         Last 7 Days
                     </button>
                     <button
                         onClick={() => setRange('30d')}
-                        className={`px-3 py-1 rounded-md text-sm font-medium transition-all ${range === '30d' ? 'bg-blue-500 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'
-                            }`}
+                        className={`px-3 py-1 rounded-md text-sm font-medium transition-all ${range === '30d' ? 'bg-blue-500 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
                     >
                         Last 30 Days
                     </button>
@@ -54,7 +66,7 @@ const HistoricalTrends = () => {
 
             <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <BarChart data={history} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                         <XAxis
                             dataKey="date"
@@ -76,7 +88,7 @@ const HistoricalTrends = () => {
                             itemStyle={{ color: '#f8fafc' }}
                         />
                         <Bar dataKey="aqi" radius={[4, 4, 0, 0]}>
-                            {data.map((entry, index) => (
+                            {history.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={getBarColor(entry.aqi)} />
                             ))}
                         </Bar>
