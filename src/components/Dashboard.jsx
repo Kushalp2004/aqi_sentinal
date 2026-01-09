@@ -132,7 +132,7 @@ const Dashboard = () => {
                     </div>
 
                     <div className="lg:col-span-2">
-                        <HistoricalTrends />
+                        <HistoricalTrends selectedStation={selectedStation} />
                     </div>
                     <div className="lg:col-span-1">
                         <StationsMap
