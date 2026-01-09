@@ -128,6 +128,33 @@ def format_predictions(h_preds, d_preds, current_data, lat, lon):
         'daily_forecast': [{'date': (ts.date() + timedelta(days=d)).isoformat(), 'avg_aqi': round(d_preds[0][i-1], 2)} for i, d in enumerate(range(1, 8))]
     }
 
+def update_history(new_data):
+    history_file = 'history.json'
+    try:
+        # Load existing history
+        with open(history_file, 'r') as f:
+            history = json.load(f)
+    except FileNotFoundError:
+        history = {}
+
+    for station_id, station_data in new_data.items():
+        if station_id not in history: history[station_id] = []
+        
+        # Add current entry
+        history[station_id].append({
+            "date": station_data['current_conditions_time'],
+            "aqi": station_data['current_aqi']
+        })
+        
+        # Keep only the last 30 days of data to stay lightweight
+        history[station_id] = history[station_id][-30:]
+
+    with open(history_file, 'w') as f:
+        json.dump(history, f)
+
+# Call it before you finish main()
+update_history(all_stations_data)
+
 # --- 3. Main Execution ---
 def main():
     if not OPENWEATHER_API_KEY:
